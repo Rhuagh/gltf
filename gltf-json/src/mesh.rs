@@ -38,11 +38,7 @@ pub const VALID_MODES: &'static [u32] = &[
 ];
 
 /// All valid semantic names for Morph targets.
-pub const VALID_MORPH_TARGETS: &'static [&'static str] = &[
-    "POSITION",
-    "NORMAL",
-    "TANGENT",
-];
+pub const VALID_MORPH_TARGETS: &'static [&'static str] = &["POSITION", "NORMAL", "TANGENT"];
 
 /// The type of primitives to render.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
@@ -125,56 +121,57 @@ pub struct Primitive {
     pub targets: Option<Vec<MorphTarget>>,
 }
 
-    impl Validate for Primitive {
-        fn validate_minimally<P, R>(&self, root: &::Root, path: P, report: &mut R)
-        where
-            P: Fn() -> ::Path,
-            R: FnMut(&Fn() -> ::Path, ::validation::Error),
+impl Validate for Primitive {
+    fn validate_minimally<P, R>(&self, root: &::Root, path: P, report: &mut R)
+    where
+        P: Fn() -> ::Path,
+        R: FnMut(&Fn() -> ::Path, ::validation::Error),
+    {
+        // Generated part
+        self.attributes
+            .validate_minimally(root, || path().field("attributes"), report);
+        self.extensions
+            .validate_minimally(root, || path().field("extensions"), report);
+        self.extras
+            .validate_minimally(root, || path().field("extras"), report);
+        self.indices
+            .validate_minimally(root, || path().field("indices"), report);
+        self.material
+            .validate_minimally(root, || path().field("material"), report);
+        self.mode
+            .validate_minimally(root, || path().field("mode"), report);
+        self.targets
+            .validate_minimally(root, || path().field("targets"), report);
+
+        // Custom part
+        let position_path = &|| path().field("attributes").key("POSITION");
+        if let Some(pos_accessor_index) = self.attributes.get(&Checked::Valid(Semantic::Positions))
         {
-            // Generated part
-            self.attributes
-                .validate_minimally(root, || path().field("attributes"), report);
-            self.extensions
-                .validate_minimally(root, || path().field("extensions"), report);
-            self.extras
-                .validate_minimally(root, || path().field("extras"), report);
-            self.indices
-                .validate_minimally(root, || path().field("indices"), report);
-            self.material
-                .validate_minimally(root, || path().field("material"), report);
-            self.mode
-                .validate_minimally(root, || path().field("mode"), report);
-            self.targets
-                .validate_minimally(root, || path().field("targets"), report);
+            // spec: POSITION accessor **must** have `min` and `max` properties defined.
+            let pos_accessor = &root.accessors[pos_accessor_index.value()];
 
-            // Custom part
-            let position_path = &|| path().field("attributes").key("POSITION");
-            if let Some(pos_accessor_index) = self.attributes.get(&Checked::Valid(Semantic::Positions)) {
-                // spec: POSITION accessor **must** have `min` and `max` properties defined.
-                let pos_accessor = &root.accessors[pos_accessor_index.value()];
-
-                let min_path = &|| position_path().field("min");
-                if let Some(ref min) = pos_accessor.min {
-                    if from_value::<[f32; 3]>(min.clone()).is_err() {
-                        report(min_path, Error::Invalid);
-                    }
-                } else {
-                    report(min_path, Error::Missing);
-                }
-
-                let max_path = &|| position_path().field("max");
-                if let Some(ref max) = pos_accessor.max {
-                    if from_value::<[f32; 3]>(max.clone()).is_err() {
-                        report(max_path, Error::Invalid);
-                    }
-                } else {
-                    report(max_path, Error::Missing);
+            let min_path = &|| position_path().field("min");
+            if let Some(ref min) = pos_accessor.min {
+                if from_value::<[f32; 3]>(min.clone()).is_err() {
+                    report(min_path, Error::Invalid);
                 }
             } else {
-                report(position_path, Error::Missing);
+                report(min_path, Error::Missing);
             }
+
+            let max_path = &|| position_path().field("max");
+            if let Some(ref max) = pos_accessor.max {
+                if from_value::<[f32; 3]>(max.clone()).is_err() {
+                    report(max_path, Error::Invalid);
+                }
+            } else {
+                report(max_path, Error::Missing);
+            }
+        } else {
+            report(position_path, Error::Missing);
         }
     }
+}
 
 /// A dictionary mapping attributes to their deviations in the Morph Target.
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
@@ -245,7 +242,8 @@ impl Mode {
 
 impl<'de> de::Deserialize<'de> for Checked<Mode> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -256,7 +254,8 @@ impl<'de> de::Deserialize<'de> for Checked<Mode> {
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 use self::Mode::*;
                 use validation::Checked::*;
@@ -294,30 +293,25 @@ impl Semantic {
             "POSITION" => Valid(Positions),
             "TANGENT" => Valid(Tangents),
             #[cfg(feature = "extras")]
-            _ if s.starts_with("_") => Valid(Extras(s[1..].to_string())),
-            _ if s.starts_with("COLOR_") => {
-                match s["COLOR_".len()..].parse() {
-                    Ok(set) => Valid(Colors(set)),
-                    Err(_) => Invalid,
-                }
+            _ if s.starts_with("_") =>
+            {
+                Valid(Extras(s[1..].to_string()))
+            }
+            _ if s.starts_with("COLOR_") => match s["COLOR_".len()..].parse() {
+                Ok(set) => Valid(Colors(set)),
+                Err(_) => Invalid,
             },
-            _ if s.starts_with("TEXCOORD_") => {
-                match s["TEXCOORD_".len()..].parse() {
-                    Ok(set) => Valid(TexCoords(set)),
-                    Err(_) => Invalid,
-                }
+            _ if s.starts_with("TEXCOORD_") => match s["TEXCOORD_".len()..].parse() {
+                Ok(set) => Valid(TexCoords(set)),
+                Err(_) => Invalid,
             },
-            _ if s.starts_with("JOINTS_") => {
-                match s["JOINTS_".len()..].parse() {
-                    Ok(set) => Valid(Joints(set)),
-                    Err(_) => Invalid,
-                }
+            _ if s.starts_with("JOINTS_") => match s["JOINTS_".len()..].parse() {
+                Ok(set) => Valid(Joints(set)),
+                Err(_) => Invalid,
             },
-            _ if s.starts_with("WEIGHTS_") => {
-                match s["WEIGHTS_".len()..].parse() {
-                    Ok(set) => Valid(Weights(set)),
-                    Err(_) => Invalid,
-                }
+            _ if s.starts_with("WEIGHTS_") => match s["WEIGHTS_".len()..].parse() {
+                Ok(set) => Valid(Weights(set)),
+                Err(_) => Invalid,
             },
             _ => Invalid,
         }
@@ -326,7 +320,8 @@ impl Semantic {
 
 impl ser::Serialize for Semantic {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer
+    where
+        S: ser::Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
@@ -360,7 +355,8 @@ impl ToString for Checked<Semantic> {
 
 impl<'de> de::Deserialize<'de> for Checked<Semantic> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -371,7 +367,8 @@ impl<'de> de::Deserialize<'de> for Checked<Semantic> {
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 Ok(Semantic::checked(value))
             }

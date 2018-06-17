@@ -26,7 +26,8 @@ fn expand(ast: &syn::MacroInput) -> quote::Tokens {
         _ => panic!("#[derive(Validate)] only works on `struct`s"),
     };
     let ident = &ast.ident;
-    let minimal_validations: Vec<quote::Tokens> = fields.iter()
+    let minimal_validations: Vec<quote::Tokens> = fields
+        .iter()
         .map(|f| f.ident.as_ref().unwrap())
         .map(|ident| {
             use inflections::Inflect;
@@ -40,7 +41,8 @@ fn expand(ast: &syn::MacroInput) -> quote::Tokens {
             )
         })
         .collect();
-    let complete_validations: Vec<quote::Tokens> = fields.iter()
+    let complete_validations: Vec<quote::Tokens> = fields
+        .iter()
         .map(|f| f.ident.as_ref().unwrap())
         .map(|ident| {
             use inflections::Inflect;

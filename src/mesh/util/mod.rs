@@ -113,7 +113,8 @@ where
 impl<'a, 's, F> ExactSizeIterator for ReadMorphTargets<'a, 's, F>
 where
     F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
-{}
+{
+}
 
 impl<'a, 's, F> Iterator for ReadMorphTargets<'a, 's, F>
 where
@@ -126,7 +127,8 @@ where
     );
     fn next(&mut self) -> Option<Self::Item> {
         self.index += 1;
-        self.reader.primitive
+        self.reader
+            .primitive
             .morph_targets()
             .nth(self.index - 1)
             .map(|morph_target| {

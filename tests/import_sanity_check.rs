@@ -1,7 +1,7 @@
 extern crate gltf;
 
-use std::{fs, path};
 use std::error::Error as StdError;
+use std::{fs, path};
 
 const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Models/2.0";
 

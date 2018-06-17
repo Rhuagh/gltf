@@ -24,7 +24,7 @@ where
     pub fn read_inverse_bind_matrices(&self) -> Option<ReadInverseBindMatrices<'s>> {
         if let Some(accessor) = self.skin.inverse_bind_matrices() {
             if let Some(slice) = (self.get_buffer_data)(accessor.view().buffer()) {
-                return Some(accessor::Iter::new(accessor, slice))
+                return Some(accessor::Iter::new(accessor, slice));
             }
         }
 

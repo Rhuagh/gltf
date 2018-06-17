@@ -65,7 +65,8 @@ impl<'a> Scheme<'a> {
 }
 
 fn read_to_end<P>(path: P) -> Result<Vec<u8>>
-where P: AsRef<Path>
+where
+    P: AsRef<Path>,
 {
     use io::Read;
     let file = fs::File::open(path.as_ref()).map_err(Error::Io)?;
@@ -89,13 +90,11 @@ pub fn import_buffer_data(
             buffer::Source::Bin => blob.take().ok_or(Error::MissingBlob),
         }?;
         if data.len() < buffer.length() {
-            return Err(
-                Error::BufferLength {
-                    buffer: buffer.index(),
-                    expected: buffer.length(),
-                    actual: data.len(),
-                }
-            );
+            return Err(Error::BufferLength {
+                buffer: buffer.index(),
+                expected: buffer.length(),
+                actual: data.len(),
+            });
         }
         while data.len() % 4 != 0 {
             data.push(0);
@@ -123,15 +122,16 @@ pub fn import_image_data(
                             _ => return Err(Error::UnsupportedImageEncoding),
                         };
                         let encoded_image = base64::decode(&base64).map_err(Error::Base64)?;
-                        let decoded_image = image_crate::load_from_memory_with_format(&encoded_image, format)?;
+                        let decoded_image =
+                            image_crate::load_from_memory_with_format(&encoded_image, format)?;
                         images.push(image::Data::new(decoded_image));
                         continue;
-                    },
+                    }
                     Scheme::Unsupported => return Err(Error::UnsupportedScheme),
-                    _ => {},
+                    _ => {}
                 }
                 let encoded_image = Scheme::read(base, uri)?;
-                let encoded_format =  match mime_type {
+                let encoded_format = match mime_type {
                     Some("image/png") => Png,
                     Some("image/jpeg") => Jpeg,
                     Some(_) => return Err(Error::UnsupportedImageEncoding),
@@ -141,9 +141,10 @@ pub fn import_image_data(
                         _ => return Err(Error::UnsupportedImageEncoding),
                     },
                 };
-                let decoded_image = image_crate::load_from_memory_with_format(&encoded_image, encoded_format)?;
+                let decoded_image =
+                    image_crate::load_from_memory_with_format(&encoded_image, encoded_format)?;
                 images.push(image::Data::new(decoded_image));
-            },
+            }
             image::Source::View { view, mime_type } => {
                 let parent_buffer_data = &buffer_data[view.buffer().index()].0;
                 let begin = view.offset();
@@ -152,11 +153,12 @@ pub fn import_image_data(
                 let encoded_format = match mime_type {
                     "image/png" => Png,
                     "image/jpeg" => Jpeg,
-                    _ => return Err(Error::UnsupportedImageEncoding)
+                    _ => return Err(Error::UnsupportedImageEncoding),
                 };
-                let decoded_image = image_crate::load_from_memory_with_format(encoded_image, encoded_format)?;
+                let decoded_image =
+                    image_crate::load_from_memory_with_format(encoded_image, encoded_format)?;
                 images.push(image::Data::new(decoded_image));
-            },
+            }
         }
     }
 
@@ -189,7 +191,8 @@ fn import_impl(path: &Path) -> Result<Import> {
 /// # }
 /// ```
 pub fn import<P>(path: P) -> Result<Import>
-    where P: AsRef<Path>
+where
+    P: AsRef<Path>,
 {
     import_impl(path.as_ref())
 }

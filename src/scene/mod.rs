@@ -41,12 +41,16 @@ impl Transform {
     pub fn matrix(self) -> [[f32; 4]; 4] {
         match self {
             Transform::Matrix { matrix } => matrix,
-            Transform::Decomposed { translation: t, rotation: r, scale: s } => {
+            Transform::Decomposed {
+                translation: t,
+                rotation: r,
+                scale: s,
+            } => {
                 let t = Matrix4::from_translation(t.into());
                 let r = Matrix4::from(Quaternion::new(r[3], r[0], r[1], r[2]));
                 let s = Matrix4::from_nonuniform_scale(s[0], s[1], s[2]);
                 (t * r * s).into()
-            },
+            }
         }
     }
 
@@ -59,9 +63,8 @@ impl Transform {
             Transform::Matrix { matrix: m } => {
                 let translation = [m[3][0], m[3][1], m[3][2]];
                 let mut i = Matrix3::new(
-                    m[0][0], m[0][1], m[0][2],
-                    m[1][0], m[1][1], m[1][2],
-                    m[2][0], m[2][1], m[2][2],
+                    m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1],
+                    m[2][2],
                 );
                 let sx = i.x.magnitude();
                 let sy = i.y.magnitude();
@@ -73,10 +76,12 @@ impl Transform {
                 let r = Quaternion::from(i);
                 let rotation = [r.v.x, r.v.y, r.v.z, r.s];
                 (translation, rotation, scale)
-            },
-            Transform::Decomposed { translation, rotation, scale } => {
-                (translation, rotation, scale)
-            },
+            }
+            Transform::Decomposed {
+                translation,
+                rotation,
+                scale,
+            } => (translation, rotation, scale),
         }
     }
 }
@@ -113,11 +118,7 @@ pub struct Scene<'a> {
 
 impl<'a> Node<'a> {
     /// Constructs a `Node`.
-    pub(crate) fn new(
-        document: &'a Document,
-        index: usize,
-        json: &'a json::scene::Node,
-    ) -> Self {
+    pub(crate) fn new(document: &'a Document, index: usize, json: &'a json::scene::Node) -> Self {
         Self {
             document: document,
             index: index,
@@ -132,9 +133,10 @@ impl<'a> Node<'a> {
 
     /// Returns the camera referenced by this node.
     pub fn camera(&self) -> Option<Camera> {
-        self.json.camera.as_ref().map(|index| {
-            self.document.cameras().nth(index.value()).unwrap()
-        })
+        self.json
+            .camera
+            .as_ref()
+            .map(|index| self.document.cameras().nth(index.value()).unwrap())
     }
 
     /// Returns an `Iterator` that visits the node's children.
@@ -152,9 +154,10 @@ impl<'a> Node<'a> {
 
     /// Returns the mesh referenced by this node.
     pub fn mesh(&self) -> Option<Mesh> {
-        self.json.mesh.as_ref().map(|index| {
-            self.document.meshes().nth(index.value()).unwrap()
-        })
+        self.json
+            .mesh
+            .as_ref()
+            .map(|index| self.document.meshes().nth(index.value()).unwrap())
     }
 
     /// Optional user-defined name for this object.
@@ -185,9 +188,10 @@ impl<'a> Node<'a> {
 
     /// Returns the skin referenced by this node.
     pub fn skin(&self) -> Option<Skin> {
-        self.json.skin.as_ref().map(|index| {
-            self.document.skins().nth(index.value()).unwrap()
-        })
+        self.json
+            .skin
+            .as_ref()
+            .map(|index| self.document.skins().nth(index.value()).unwrap())
     }
 
     /// Returns the weights of the instantiated morph target.
@@ -198,11 +202,7 @@ impl<'a> Node<'a> {
 
 impl<'a> Scene<'a> {
     /// Constructs a `Scene`.
-    pub(crate) fn new(
-        document: &'a Document,
-        index: usize,
-        json: &'a json::scene::Scene,
-    ) -> Self {
+    pub(crate) fn new(document: &'a Document, index: usize, json: &'a json::scene::Scene) -> Self {
         Self {
             document: document,
             index: index,
@@ -216,7 +216,7 @@ impl<'a> Scene<'a> {
     }
 
     /// Optional application specific data.
-    pub fn extras(&self) -> &json::Extras{
+    pub fn extras(&self) -> &json::Extras {
         &self.json.extras
     }
 
@@ -237,9 +237,9 @@ impl<'a> Scene<'a> {
 
 #[cfg(test)]
 mod tests {
-    use ::cgmath::{vec3, InnerSpace, Matrix4, Quaternion, Rad, Rotation3};
-    use ::scene::Transform;
-    use ::std::f32::consts::PI;
+    use cgmath::{vec3, InnerSpace, Matrix4, Quaternion, Rad, Rotation3};
+    use scene::Transform;
+    use std::f32::consts::PI;
 
     fn rotate(x: f32, y: f32, z: f32, r: f32) -> [f32; 4] {
         let r = Quaternion::from_axis_angle(vec3(x, y, z).normalize(), Rad(r));
@@ -247,14 +247,18 @@ mod tests {
     }
 
     fn test_decompose(translation: [f32; 3], rotation: [f32; 4], scale: [f32; 3]) {
-        let matrix = Transform::Decomposed { translation, rotation, scale }.matrix();
+        let matrix = Transform::Decomposed {
+            translation,
+            rotation,
+            scale,
+        }.matrix();
         let (translation, rotation, scale) = Transform::Matrix { matrix }.decomposed();
-        let check = Transform::Decomposed { translation, rotation, scale }.matrix();
-        assert_relative_eq!(
-            Matrix4::from(check),
-            Matrix4::from(matrix),
-            epsilon = 0.05
-        );
+        let check = Transform::Decomposed {
+            translation,
+            rotation,
+            scale,
+        }.matrix();
+        assert_relative_eq!(Matrix4::from(check), Matrix4::from(matrix), epsilon = 0.05);
     }
 
     fn test_decompose_rotation(rotation: [f32; 4]) {

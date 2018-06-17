@@ -23,7 +23,7 @@ pub struct Camera<'a> {
     /// The corresponding JSON struct.
     json: &'a json::camera::Camera,
 }
-  
+
 ///  Values for an orthographic camera projection.
 #[derive(Clone, Debug)]
 pub struct Orthographic<'a> {
@@ -33,7 +33,7 @@ pub struct Orthographic<'a> {
     /// The corresponding JSON struct.
     json: &'a json::camera::Orthographic,
 }
-  
+
 /// Values for a perspective camera projection.
 #[derive(Clone, Debug)]
 pub struct Perspective<'a> {
@@ -46,7 +46,11 @@ pub struct Perspective<'a> {
 
 impl<'a> Camera<'a> {
     /// Constructs a `Camera`.
-    pub(crate) fn new(document: &'a Document, index: usize, json: &'a json::camera::Camera) -> Self {
+    pub(crate) fn new(
+        document: &'a Document,
+        index: usize,
+        json: &'a json::camera::Camera,
+    ) -> Self {
         Self {
             document: document,
             index: index,
@@ -71,13 +75,13 @@ impl<'a> Camera<'a> {
             json::camera::Type::Orthographic => {
                 let json = self.json.orthographic.as_ref().unwrap();
                 Projection::Orthographic(Orthographic::new(self.document, json))
-            },
+            }
             json::camera::Type::Perspective => {
                 let json = self.json.perspective.as_ref().unwrap();
                 Projection::Perspective(Perspective::new(self.document, json))
-            },
+            }
         }
-    } 
+    }
 
     /// Optional application specific data.
     pub fn extras(&self) -> &json::Extras {

@@ -1,5 +1,5 @@
 use validation::{Error, Validate};
-use {camera, extensions, mesh, scene, skin, Extras, Index, Root, Path};
+use {camera, extensions, mesh, scene, skin, Extras, Index, Path, Root};
 
 /// A node in the node hierarchy.  When the node contains `skin`, all
 /// `mesh.primitives` must contain `JOINTS_0` and `WEIGHTS_0` attributes.
@@ -15,28 +15,28 @@ use {camera, extensions, mesh, scene, skin, Extras, Index, Root, Path};
 pub struct Node {
     /// The index of the camera referenced by this node.
     pub camera: Option<Index<camera::Camera>>,
-    
+
     /// The indices of this node's children.
     pub children: Option<Vec<Index<scene::Node>>>,
 
     /// Extension specific data.
     #[serde(default)]
     pub extensions: extensions::scene::Node,
-    
+
     /// Optional application specific data.
     #[serde(default)]
     pub extras: Extras,
-    
+
     /// 4x4 column-major transformation matrix.
     pub matrix: Option<[f32; 16]>,
 
     /// The index of the mesh in this node.
     pub mesh: Option<Index<mesh::Mesh>>,
-    
+
     /// Optional user-defined name for this object.
     #[cfg(feature = "names")]
     pub name: Option<String>,
-    
+
     /// The node's unit quaternion rotation in the order (x, y, z, w), where w is
     /// the scalar.
     #[serde(default)]
@@ -49,10 +49,10 @@ pub struct Node {
     /// The node's translation.
     #[serde(default)]
     pub translation: [f32; 3],
-    
+
     /// The index of the skin referenced by this node.
     pub skin: Option<Index<skin::Skin>>,
-    
+
     /// The weights of the instantiated Morph Target. Number of elements must match
     /// the number of Morph Targets of used mesh.
     pub weights: Option<Vec<f32>>,
@@ -68,11 +68,11 @@ pub struct Scene {
     /// Extension specific data.
     #[serde(default)]
     pub extensions: extensions::scene::Scene,
-    
+
     /// Optional application specific data.
     #[serde(default)]
     pub extras: Extras,
-    
+
     /// Optional user-defined name for this object.
     #[cfg(feature = "names")]
     pub name: Option<String>,
@@ -93,7 +93,9 @@ impl Default for UnitQuaternion {
 
 impl Validate for UnitQuaternion {
     fn validate_completely<P, R>(&self, _: &Root, path: P, report: &mut R)
-        where P: Fn() -> Path, R: FnMut(&Fn() -> Path, Error)
+    where
+        P: Fn() -> Path,
+        R: FnMut(&Fn() -> Path, Error),
     {
         for x in &self.0 {
             if *x < -1.0 || *x > 1.0 {

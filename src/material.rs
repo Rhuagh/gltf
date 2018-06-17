@@ -302,7 +302,7 @@ impl<'a> OcclusionTexture<'a> {
     pub fn texture(&self) -> texture::Texture<'a> {
         self.texture.clone()
     }
-    
+
     /// Optional application specific data.
     pub fn extras(&self) -> &json::Extras {
         &self.json.extras

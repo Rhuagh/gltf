@@ -5,8 +5,8 @@
 
 extern crate gltf;
 
-use std::{boxed, error, fs, io, path};
 use std::io::Read;
+use std::{boxed, error, fs, io, path};
 
 const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Models/2.0";
 
@@ -21,7 +21,8 @@ fn run() -> Result<(), boxed::Box<error::Error>> {
             if let Some(file_name) = entry_path.file_name() {
                 let mut path = entry_path.join("glTF-Binary").join(file_name);
                 path.set_extension("glb");
-                if path.exists() { // not all models have binary versions
+                if path.exists() {
+                    // not all models have binary versions
                     if let Err(err) = test(&path) {
                         println!("{:?}: error: {:?}", path, err);
                         all_tests_passed = false;

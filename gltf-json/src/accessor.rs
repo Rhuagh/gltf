@@ -1,8 +1,8 @@
-use {buffer, extensions, Extras, Index};
 use serde::{de, ser};
 use serde_json::Value;
 use std::fmt;
 use validation::Checked;
+use {buffer, extensions, Extras, Index};
 
 /// The component data type.
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -43,7 +43,7 @@ pub enum Type {
 
     /// 2x2 matrix.
     Mat2,
-    
+
     /// 3x3 matrix.
     Mat3,
 
@@ -80,27 +80,16 @@ pub const VALID_COMPONENT_TYPES: &'static [u32] = &[
 ];
 
 /// All valid index component types.
-pub const VALID_INDEX_TYPES: &'static [u32] = &[
-    UNSIGNED_BYTE,
-    UNSIGNED_SHORT,
-    UNSIGNED_INT,
-];
+pub const VALID_INDEX_TYPES: &'static [u32] = &[UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT];
 
 /// All valid accessor types.
-pub const VALID_ACCESSOR_TYPES: &'static [&'static str] = &[
-    "SCALAR",
-    "VEC2",
-    "VEC3",
-    "VEC4",
-    "MAT2",
-    "MAT3",
-    "MAT4",
-];
+pub const VALID_ACCESSOR_TYPES: &'static [&'static str] =
+    &["SCALAR", "VEC2", "VEC3", "VEC4", "MAT2", "MAT3", "MAT4"];
 
 /// Contains data structures for sparse storage.
 pub mod sparse {
     use super::*;
-    use ::extensions;
+    use extensions;
 
     /// Indices of those attributes that deviate from their initialization value.
     #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
@@ -228,7 +217,7 @@ pub struct Accessor {
     /// Specifies whether integer data values should be normalized.
     #[serde(default)]
     pub normalized: bool,
-    
+
     /// Sparse storage of attributes that deviate from their initialization
     /// value.
     #[serde(default)]
@@ -245,7 +234,8 @@ pub struct GenericComponentType(pub ComponentType);
 
 impl<'de> de::Deserialize<'de> for Checked<GenericComponentType> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -256,7 +246,8 @@ impl<'de> de::Deserialize<'de> for Checked<GenericComponentType> {
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 use self::ComponentType::*;
                 use validation::Checked::*;
@@ -277,7 +268,8 @@ impl<'de> de::Deserialize<'de> for Checked<GenericComponentType> {
 
 impl<'de> de::Deserialize<'de> for Checked<IndexComponentType> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -288,7 +280,8 @@ impl<'de> de::Deserialize<'de> for Checked<IndexComponentType> {
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 use self::ComponentType::*;
                 use validation::Checked::*;
@@ -306,7 +299,8 @@ impl<'de> de::Deserialize<'de> for Checked<IndexComponentType> {
 
 impl<'de> de::Deserialize<'de> for Checked<Type> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -317,7 +311,8 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 use self::Type::*;
                 use validation::Checked::*;
@@ -340,7 +335,7 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
 impl ser::Serialize for Type {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: ser::Serializer
+        S: ser::Serializer,
     {
         serializer.serialize_str(match *self {
             Type::Scalar => "SCALAR",
@@ -381,7 +376,7 @@ impl ComponentType {
 impl ser::Serialize for ComponentType {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: ser::Serializer
+        S: ser::Serializer,
     {
         serializer.serialize_u32(self.as_gl_enum())
     }

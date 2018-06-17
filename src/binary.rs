@@ -1,6 +1,6 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::{fmt, io, mem};
 use std::borrow::Cow;
+use std::{fmt, io, mem};
 
 /// Represents a Glb loader error.
 #[derive(Debug)]
@@ -94,7 +94,9 @@ impl Header {
         }
     }
 
-    fn size_of() -> usize { 12 }
+    fn size_of() -> usize {
+        12
+    }
 }
 
 impl ChunkHeader {
@@ -119,13 +121,15 @@ fn align_to_multiple_of_four(n: &mut usize) {
 impl<'a> Glb<'a> {
     /// Writes binary glTF to a writer.
     pub fn to_writer<W>(&self, mut writer: W) -> Result<(), ::Error>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         // Write GLB header
         {
             let magic = b"glTF";
             let version = 2;
-            let mut length = mem::size_of::<Header>() + mem::size_of::<ChunkHeader>() + self.json.len();
+            let mut length =
+                mem::size_of::<Header>() + mem::size_of::<ChunkHeader>() + self.json.len();
             align_to_multiple_of_four(&mut length);
             if let Some(bin) = self.bin.as_ref() {
                 length += mem::size_of::<ChunkHeader>() + bin.len();
@@ -204,9 +208,13 @@ impl<'a> Glb<'a> {
             .map_err(::Error::Binary)?;
         match header.version {
             2 => Self::from_v2(data)
-                .map(|(json, bin)| Glb { header, json: json.into(), bin: bin.map(Into::into) })
+                .map(|(json, bin)| Glb {
+                    header,
+                    json: json.into(),
+                    bin: bin.map(Into::into),
+                })
                 .map_err(::Error::Binary),
-            x => Err(::Error::Binary(Error::Version(x)))
+            x => Err(::Error::Binary(Error::Version(x))),
         }
     }
 
@@ -231,7 +239,7 @@ impl<'a> Glb<'a> {
                         .map_err(::Error::Binary)
                 }
             }
-            x => Err(::Error::Binary(Error::Version(x)))
+            x => Err(::Error::Binary(Error::Version(x))),
         }
     }
 
@@ -291,20 +299,20 @@ impl fmt::Display for Error {
 
 impl ::std::error::Error for Error {
     fn description(&self) -> &str {
-         match *self {
-             Error::Io(ref e) => e.description(),
-             Error::Version(_) => "unsupported version",
-             Error::Magic(_) => "not glTF magic",
-             Error::Length { .. } => "could not completely read the object",
-             Error::ChunkLength { ty, .. } => match ty {
-                 ChunkType::Json => "JSON chunk length exceeds that of slice",
-                 ChunkType::Bin => "BIN\\0 chunk length exceeds that of slice",
-             },
-             Error::ChunkType(ty) => match ty {
-                 ChunkType::Json => "was not expecting JSON chunk",
-                 ChunkType::Bin => "was not expecting BIN\\0 chunk",
-             },
-             Error::UnknownChunkType(_) => "unknown chunk type",
+        match *self {
+            Error::Io(ref e) => e.description(),
+            Error::Version(_) => "unsupported version",
+            Error::Magic(_) => "not glTF magic",
+            Error::Length { .. } => "could not completely read the object",
+            Error::ChunkLength { ty, .. } => match ty {
+                ChunkType::Json => "JSON chunk length exceeds that of slice",
+                ChunkType::Bin => "BIN\\0 chunk length exceeds that of slice",
+            },
+            Error::ChunkType(ty) => match ty {
+                ChunkType::Json => "was not expecting JSON chunk",
+                ChunkType::Bin => "was not expecting BIN\\0 chunk",
+            },
+            Error::UnknownChunkType(_) => "unknown chunk type",
         }
     }
 }

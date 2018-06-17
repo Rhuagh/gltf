@@ -13,7 +13,7 @@ pub struct Joints<'a> {
     pub(crate) iter: slice::Iter<'a, json::Index<json::scene::Node>>,
 }
 
-impl<'a> Iterator for Joints<'a>  {
+impl<'a> Iterator for Joints<'a> {
     type Item = Node<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         self.iter

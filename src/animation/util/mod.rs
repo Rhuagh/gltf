@@ -137,7 +137,8 @@ impl<'a> MorphTargetWeights<'a> {
 }
 
 impl<'a, 's, F> Reader<'a, 's, F>
-where F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
+where
+    F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
 {
     /// Visits the input samples of a channel.
     pub fn read_inputs(&self) -> Option<ReadInputs<'s>> {
@@ -156,28 +157,28 @@ where F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
 
         let output = self.channel.sampler().output();
         if let Some(slice) = (self.get_buffer_data)(output.view().buffer()) {
-            Some(
-                match self.channel.target().property() {
-                    Property::Translation => ReadOutputs::Translations(Iter::new(output, slice)),
-                    Property::Rotation => ReadOutputs::Rotations(match output.data_type() {
-                        DataType::I8 => Rotations::I8(Iter::new(output, slice)),
-                        DataType::U8 => Rotations::U8(Iter::new(output, slice)),
-                        DataType::I16 => Rotations::I16(Iter::new(output, slice)),
-                        DataType::U16 => Rotations::U16(Iter::new(output, slice)),
-                        DataType::F32 => Rotations::F32(Iter::new(output, slice)),
-                        _ => unreachable!()
-                    }),
-                    Property::Scale => ReadOutputs::Scales(Iter::new(output, slice)),
-                    Property::MorphTargetWeights => ReadOutputs::MorphTargetWeights(match output.data_type() {
+            Some(match self.channel.target().property() {
+                Property::Translation => ReadOutputs::Translations(Iter::new(output, slice)),
+                Property::Rotation => ReadOutputs::Rotations(match output.data_type() {
+                    DataType::I8 => Rotations::I8(Iter::new(output, slice)),
+                    DataType::U8 => Rotations::U8(Iter::new(output, slice)),
+                    DataType::I16 => Rotations::I16(Iter::new(output, slice)),
+                    DataType::U16 => Rotations::U16(Iter::new(output, slice)),
+                    DataType::F32 => Rotations::F32(Iter::new(output, slice)),
+                    _ => unreachable!(),
+                }),
+                Property::Scale => ReadOutputs::Scales(Iter::new(output, slice)),
+                Property::MorphTargetWeights => {
+                    ReadOutputs::MorphTargetWeights(match output.data_type() {
                         DataType::I8 => MorphTargetWeights::I8(Iter::new(output, slice)),
                         DataType::U8 => MorphTargetWeights::U8(Iter::new(output, slice)),
                         DataType::I16 => MorphTargetWeights::I16(Iter::new(output, slice)),
                         DataType::U16 => MorphTargetWeights::U16(Iter::new(output, slice)),
                         DataType::F32 => MorphTargetWeights::F32(Iter::new(output, slice)),
-                        _ => unreachable!()
-                    }),
+                        _ => unreachable!(),
+                    })
                 }
-            )            
+            })
         } else {
             None
         }

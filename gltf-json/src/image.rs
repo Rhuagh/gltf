@@ -1,11 +1,8 @@
 use validation::{Error, Validate};
-use {buffer, extensions, Extras, Index, Root, Path};
+use {buffer, extensions, Extras, Index, Path, Root};
 
 /// All valid MIME types.
-pub const VALID_MIME_TYPES: &'static [&'static str] = &[
-    "image/jpeg",
-    "image/png",
-];
+pub const VALID_MIME_TYPES: &'static [&'static str] = &["image/jpeg", "image/png"];
 
 /// Image data used to create a texture.
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
@@ -43,7 +40,9 @@ pub struct MimeType(pub String);
 
 impl Validate for MimeType {
     fn validate_completely<P, R>(&self, _: &Root, path: P, report: &mut R)
-        where P: Fn() -> Path, R: FnMut(&Fn() -> Path, Error)
+    where
+        P: Fn() -> Path,
+        R: FnMut(&Fn() -> Path, Error),
     {
         if !VALID_MIME_TYPES.contains(&self.0.as_str()) {
             report(&path, Error::Invalid);

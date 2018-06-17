@@ -1,7 +1,7 @@
 use serde::{de, ser};
 use std::fmt;
 use validation::{Checked, Error, Validate};
-use {extensions, Extras, Index, Root, Path};
+use {extensions, Extras, Index, Path, Root};
 
 /// Corresponds to `GL_ARRAY_BUFFER`.
 pub const ARRAY_BUFFER: u32 = 34_962;
@@ -16,10 +16,7 @@ pub const MIN_BYTE_STRIDE: u32 = 4;
 pub const MAX_BYTE_STRIDE: u32 = 252;
 
 /// All valid GPU buffer targets.
-pub const VALID_TARGETS: &'static [u32] = &[
-    ARRAY_BUFFER,
-    ELEMENT_ARRAY_BUFFER,
-];
+pub const VALID_TARGETS: &'static [u32] = &[ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER];
 
 /// Specifies the target a GPU buffer should be bound to.
 #[derive(Clone, Copy, Debug)]
@@ -33,7 +30,8 @@ pub enum Target {
 
 impl ser::Serialize for Target {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer
+    where
+        S: ser::Serializer,
     {
         match *self {
             Target::ArrayBuffer => serializer.serialize_u32(ARRAY_BUFFER),
@@ -125,7 +123,8 @@ impl Validate for ByteStride {
 
 impl<'de> de::Deserialize<'de> for Checked<Target> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -136,7 +135,8 @@ impl<'de> de::Deserialize<'de> for Checked<Target> {
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 use self::Target::*;
                 use validation::Checked::*;
@@ -150,4 +150,3 @@ impl<'de> de::Deserialize<'de> for Checked<Target> {
         deserializer.deserialize_u64(Visitor)
     }
 }
-

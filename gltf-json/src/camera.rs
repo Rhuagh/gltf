@@ -1,13 +1,10 @@
 use serde::{de, ser};
 use std::fmt;
 use validation::{Checked, Error, Validate};
-use {extensions, Extras, Root, Path};
+use {extensions, Extras, Path, Root};
 
 /// All valid camera types.
-pub const VALID_CAMERA_TYPES: &'static [&'static str] = &[
-    "perspective",
-    "orthographic",
-];
+pub const VALID_CAMERA_TYPES: &'static [&'static str] = &["perspective", "orthographic"];
 
 /// Specifies the camera type.
 #[derive(Clone, Copy, Debug)]
@@ -101,7 +98,9 @@ pub struct Perspective {
 
 impl Validate for Camera {
     fn validate_minimally<P, R>(&self, root: &Root, path: P, report: &mut R)
-        where P: Fn() -> Path, R: FnMut(&Fn() -> Path, Error)
+    where
+        P: Fn() -> Path,
+        R: FnMut(&Fn() -> Path, Error),
     {
         if self.orthographic.is_none() && self.perspective.is_none() {
             report(&path, Error::Missing);
@@ -122,13 +121,15 @@ impl Validate for Camera {
 
 impl Validate for Orthographic {
     fn validate_completely<P, R>(&self, root: &Root, path: P, report: &mut R)
-        where P: Fn() -> Path, R: FnMut(&Fn() -> Path, Error)
+    where
+        P: Fn() -> Path,
+        R: FnMut(&Fn() -> Path, Error),
     {
         if self.znear < 0.0 {
             report(&path, Error::Invalid);
         }
- 
-        if self.zfar < 0.0  || self.zfar < self.znear {
+
+        if self.zfar < 0.0 || self.zfar < self.znear {
             report(&path, Error::Invalid);
         }
 
@@ -141,7 +142,9 @@ impl Validate for Orthographic {
 
 impl Validate for Perspective {
     fn validate_completely<P, R>(&self, root: &Root, path: P, report: &mut R)
-        where P: Fn() -> Path, R: FnMut(&Fn() -> Path, Error)
+    where
+        P: Fn() -> Path,
+        R: FnMut(&Fn() -> Path, Error),
     {
         self.aspect_ratio.map(|aspect_ratio| {
             if aspect_ratio < 0.0 {
@@ -172,7 +175,8 @@ impl Validate for Perspective {
 
 impl<'de> de::Deserialize<'de> for Checked<Type> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: de::Deserializer<'de>
+    where
+        D: de::Deserializer<'de>,
     {
         struct Visitor;
         impl<'de> de::Visitor<'de> for Visitor {
@@ -183,7 +187,8 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 use self::Type::*;
                 use validation::Checked::*;
@@ -200,7 +205,8 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
 
 impl ser::Serialize for Type {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ser::Serializer
+    where
+        S: ser::Serializer,
     {
         match *self {
             Type::Perspective => serializer.serialize_str("perspective"),

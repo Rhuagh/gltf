@@ -119,9 +119,9 @@ pub mod skin;
 pub mod texture;
 
 #[doc(inline)]
-pub use self::animation::Animation;
-#[doc(inline)]
 pub use self::accessor::Accessor;
+#[doc(inline)]
+pub use self::animation::Animation;
 #[doc(inline)]
 pub use self::buffer::Buffer;
 #[doc(inline)]
@@ -184,7 +184,7 @@ pub enum Error {
     /// Image decoding error.
     #[cfg(feature = "import")]
     Image(image_crate::ImageError),
-    
+
     /// The `BIN` chunk of binary glTF is referenced but does not exist.
     #[cfg(feature = "import")]
     MissingBlob,
@@ -230,7 +230,7 @@ impl Gltf {
     /// Loads glTF from a reader without performing validation checks.
     pub fn from_reader_without_validation<R>(mut reader: R) -> Result<Self>
     where
-        R: io::Read + io::Seek
+        R: io::Read + io::Seek,
     {
         let mut magic = [0u8; 4];
         reader.read_exact(&mut magic)?;
@@ -319,11 +319,10 @@ impl Document {
     pub(crate) fn validate(&self) -> Result<()> {
         use json::validation::Validate;
         let mut errors = Vec::new();
-        self.0.validate_minimally(
-            &self.0,
-            json::Path::new,
-            &mut |path, error| errors.push((path(), error)),
-        );
+        self.0
+            .validate_minimally(&self.0, json::Path::new, &mut |path, error| {
+                errors.push((path(), error))
+            });
         if errors.is_empty() {
             Ok(())
         } else {
@@ -517,119 +516,187 @@ impl From<Vec<(json::Path, json::validation::Error)>> for Error {
 }
 
 impl Normalize<i8> for i8 {
-    fn normalize(self) -> i8 { self }
+    fn normalize(self) -> i8 {
+        self
+    }
 }
 
 impl Normalize<u8> for i8 {
-    fn normalize(self) -> u8 { self.max(0) as u8 * 2 }
+    fn normalize(self) -> u8 {
+        self.max(0) as u8 * 2
+    }
 }
 
 impl Normalize<i16> for i8 {
-    fn normalize(self) -> i16 { self as i16 * 0x100 }
+    fn normalize(self) -> i16 {
+        self as i16 * 0x100
+    }
 }
 
 impl Normalize<u16> for i8 {
-    fn normalize(self) -> u16 { self.max(0) as u16 * 0x200 }
+    fn normalize(self) -> u16 {
+        self.max(0) as u16 * 0x200
+    }
 }
 
 impl Normalize<f32> for i8 {
-    fn normalize(self) -> f32 { (self as f32 * 127.0_f32.recip()).max(-1.0) }
+    fn normalize(self) -> f32 {
+        (self as f32 * 127.0_f32.recip()).max(-1.0)
+    }
 }
 
 impl Normalize<i8> for u8 {
-    fn normalize(self) -> i8 { (self / 2) as i8 }
+    fn normalize(self) -> i8 {
+        (self / 2) as i8
+    }
 }
 
 impl Normalize<u8> for u8 {
-    fn normalize(self) -> u8 { self }
+    fn normalize(self) -> u8 {
+        self
+    }
 }
 
 impl Normalize<i16> for u8 {
-    fn normalize(self) -> i16 { self as i16 * 0x80 }
+    fn normalize(self) -> i16 {
+        self as i16 * 0x80
+    }
 }
 
 impl Normalize<u16> for u8 {
-    fn normalize(self) -> u16 { self.max(0) as u16 * 2 }
+    fn normalize(self) -> u16 {
+        self.max(0) as u16 * 2
+    }
 }
 
 impl Normalize<f32> for u8 {
-    fn normalize(self) -> f32 { (self as f32 * 32767.0_f32.recip()).max(-1.0) }
+    fn normalize(self) -> f32 {
+        (self as f32 * 32767.0_f32.recip()).max(-1.0)
+    }
 }
 
 impl Normalize<i8> for i16 {
-    fn normalize(self) -> i8 { (self / 0x100) as i8 }
+    fn normalize(self) -> i8 {
+        (self / 0x100) as i8
+    }
 }
 
 impl Normalize<u8> for i16 {
-    fn normalize(self) -> u8 { (self.max(0) / 0x80) as u8 }
+    fn normalize(self) -> u8 {
+        (self.max(0) / 0x80) as u8
+    }
 }
 
 impl Normalize<i16> for i16 {
-    fn normalize(self) -> i16 { self }
+    fn normalize(self) -> i16 {
+        self
+    }
 }
 
 impl Normalize<u16> for i16 {
-    fn normalize(self) -> u16 { self.max(0) as u16 * 2 }
+    fn normalize(self) -> u16 {
+        self.max(0) as u16 * 2
+    }
 }
 
 impl Normalize<f32> for i16 {
-    fn normalize(self) -> f32 { (self as f32 * 32767.0_f32.recip()).max(-1.0) }
+    fn normalize(self) -> f32 {
+        (self as f32 * 32767.0_f32.recip()).max(-1.0)
+    }
 }
 
 impl Normalize<i8> for u16 {
-    fn normalize(self) -> i8 { (self / 0x200) as i8 }
+    fn normalize(self) -> i8 {
+        (self / 0x200) as i8
+    }
 }
 
 impl Normalize<u8> for u16 {
-    fn normalize(self) -> u8 { (self / 0x100) as u8 }
+    fn normalize(self) -> u8 {
+        (self / 0x100) as u8
+    }
 }
 
 impl Normalize<i16> for u16 {
-    fn normalize(self) -> i16 { (self / 2) as i16 }
+    fn normalize(self) -> i16 {
+        (self / 2) as i16
+    }
 }
 
 impl Normalize<u16> for u16 {
-    fn normalize(self) -> u16 { self }
+    fn normalize(self) -> u16 {
+        self
+    }
 }
 
 impl Normalize<f32> for u16 {
-    fn normalize(self) -> f32 { self as f32 * 65535.0_f32.recip() }
+    fn normalize(self) -> f32 {
+        self as f32 * 65535.0_f32.recip()
+    }
 }
 
 impl Normalize<i8> for f32 {
-    fn normalize(self) -> i8 { (self * 127.0) as i8 }
+    fn normalize(self) -> i8 {
+        (self * 127.0) as i8
+    }
 }
 
 impl Normalize<u8> for f32 {
-    fn normalize(self) -> u8 { (self.max(0.0) * 255.0) as u8 }
+    fn normalize(self) -> u8 {
+        (self.max(0.0) * 255.0) as u8
+    }
 }
 
 impl Normalize<i16> for f32 {
-    fn normalize(self) -> i16 { (self * 32767.0) as i16 }
+    fn normalize(self) -> i16 {
+        (self * 32767.0) as i16
+    }
 }
 
 impl Normalize<u16> for f32 {
-    fn normalize(self) -> u16 { (self.max(0.0) * 65535.0) as u16 }
+    fn normalize(self) -> u16 {
+        (self.max(0.0) * 65535.0) as u16
+    }
 }
 
 impl Normalize<f32> for f32 {
-    fn normalize(self) -> f32 { self }
+    fn normalize(self) -> f32 {
+        self
+    }
 }
 
-impl<U, T> Normalize<[T; 2]> for [U; 2] where U: Normalize<T> + Copy {
+impl<U, T> Normalize<[T; 2]> for [U; 2]
+where
+    U: Normalize<T> + Copy,
+{
     fn normalize(self) -> [T; 2] {
         [self[0].normalize(), self[1].normalize()]
     }
 }
 
-impl<U, T> Normalize<[T; 3]> for [U; 3] where U: Normalize<T> + Copy {
+impl<U, T> Normalize<[T; 3]> for [U; 3]
+where
+    U: Normalize<T> + Copy,
+{
     fn normalize(self) -> [T; 3] {
-        [self[0].normalize(), self[1].normalize(), self[2].normalize()]
+        [
+            self[0].normalize(),
+            self[1].normalize(),
+            self[2].normalize(),
+        ]
     }
 }
 
-impl<U, T> Normalize<[T; 4]> for [U; 4] where U: Normalize<T> + Copy {
+impl<U, T> Normalize<[T; 4]> for [U; 4]
+where
+    U: Normalize<T> + Copy,
+{
     fn normalize(self) -> [T; 4] {
-        [self[0].normalize(), self[1].normalize(), self[2].normalize(), self[3].normalize()]
+        [
+            self[0].normalize(),
+            self[1].normalize(),
+            self[2].normalize(),
+            self[3].normalize(),
+        ]
     }
 }

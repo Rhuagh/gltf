@@ -3,7 +3,7 @@ use json;
 #[cfg(feature = "import")]
 use std::ops;
 
-use {Document};
+use Document;
 
 pub use json::buffer::Target;
 
@@ -106,11 +106,7 @@ impl<'a> Buffer<'a> {
 
 impl<'a> View<'a> {
     /// Constructs a `View`.
-    pub(crate) fn new(
-        document: &'a Document,
-        index: usize,
-        json: &'a json::buffer::View,
-    ) -> Self {
+    pub(crate) fn new(document: &'a Document, index: usize, json: &'a json::buffer::View) -> Self {
         let parent = document.buffers().nth(json.buffer.value()).unwrap();
         Self {
             document,
@@ -127,7 +123,10 @@ impl<'a> View<'a> {
 
     /// Returns the parent `Buffer`.
     pub fn buffer(&self) -> Buffer<'a> {
-        self.document.buffers().nth(self.json.buffer.value()).unwrap()
+        self.document
+            .buffers()
+            .nth(self.json.buffer.value())
+            .unwrap()
     }
 
     /// Returns the length of the buffer view in bytes.

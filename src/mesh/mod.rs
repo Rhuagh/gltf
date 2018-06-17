@@ -82,7 +82,7 @@ pub struct Bounds<T> {
 
 /// A set of primitives to be rendered.
 #[derive(Clone, Debug)]
-pub struct Mesh<'a>  {
+pub struct Mesh<'a> {
     /// The parent `Document` struct.
     document: &'a Document,
 
@@ -108,7 +108,7 @@ pub struct MorphTarget<'a> {
 
 /// Geometry to be rendered with the given material.
 #[derive(Clone, Debug)]
-pub struct Primitive<'a>  {
+pub struct Primitive<'a> {
     /// The parent `Mesh` struct.
     mesh: &'a Mesh<'a>,
 
@@ -129,13 +129,9 @@ where
     pub(crate) get_buffer_data: F,
 }
 
-impl<'a> Mesh<'a>  {
+impl<'a> Mesh<'a> {
     /// Constructs a `Mesh`.
-    pub(crate) fn new(
-        document: &'a Document,
-        index: usize,
-        json: &'a json::mesh::Mesh,
-    ) -> Self {
+    pub(crate) fn new(document: &'a Document, index: usize, json: &'a json::mesh::Mesh) -> Self {
         Self {
             document: document,
             index: index,
@@ -175,11 +171,7 @@ impl<'a> Mesh<'a>  {
 
 impl<'a> Primitive<'a> {
     /// Constructs a `Primitive`.
-    pub(crate) fn new(
-        mesh: &'a Mesh<'a>,
-        index: usize,
-        json: &'a json::mesh::Primitive,
-    ) -> Self {
+    pub(crate) fn new(mesh: &'a Mesh<'a>, index: usize, json: &'a json::mesh::Primitive) -> Self {
         Self {
             mesh: mesh,
             index: index,
@@ -190,8 +182,15 @@ impl<'a> Primitive<'a> {
     /// Returns the bounds of the `POSITION` vertex attribute.
     pub fn bounding_box(&self) -> BoundingBox {
         // NOTE: cannot panic if validated "minimally"
-        let pos_accessor_index = self.json.attributes.get(&Checked::Valid(Semantic::Positions)).unwrap();
-        let pos_accessor = self.mesh.document.accessors().nth(pos_accessor_index.value()).unwrap();
+        let pos_accessor_index = self.json
+            .attributes
+            .get(&Checked::Valid(Semantic::Positions))
+            .unwrap();
+        let pos_accessor = self.mesh
+            .document
+            .accessors()
+            .nth(pos_accessor_index.value())
+            .unwrap();
         let min: [f32; 3] = json::deserialize::from_value(pos_accessor.min().unwrap()).unwrap();
         let max: [f32; 3] = json::deserialize::from_value(pos_accessor.max().unwrap()).unwrap();
         Bounds { min, max }
@@ -204,7 +203,8 @@ impl<'a> Primitive<'a> {
 
     /// Return the accessor with the given semantic.
     pub fn get(&self, semantic: &Semantic) -> Option<Accessor> {
-        self.json.attributes
+        self.json
+            .attributes
             .get(&json::validation::Checked::Valid(semantic.clone()))
             .map(|index| self.mesh.document.accessors().nth(index.value()).unwrap())
     }
@@ -216,7 +216,8 @@ impl<'a> Primitive<'a> {
 
     /// Returns the accessor containing the primitive indices, if provided.
     pub fn indices(&self) -> Option<Accessor> {
-        self.json.indices
+        self.json
+            .indices
             .as_ref()
             .map(|index| self.mesh.document.accessors().nth(index.value()).unwrap())
     }
@@ -232,7 +233,8 @@ impl<'a> Primitive<'a> {
 
     /// Returns the material to apply to this primitive when rendering
     pub fn material(&self) -> Material {
-        self.json.material
+        self.json
+            .material
             .as_ref()
             .map(|index| self.mesh.document.materials().nth(index.value()).unwrap())
             .unwrap_or_else(|| Material::default(self.mesh.document))
@@ -260,26 +262,27 @@ impl<'a> Primitive<'a> {
 
     /// Constructs the primitive reader.
     #[cfg(feature = "utils")]
-    pub fn reader<'s, F>(
-        &'a self,
-        get_buffer_data: F,
-    ) -> Reader<'a, 's, F>
+    pub fn reader<'s, F>(&'a self, get_buffer_data: F) -> Reader<'a, 's, F>
     where
         F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
     {
-        Reader { primitive: self, get_buffer_data }
+        Reader {
+            primitive: self,
+            get_buffer_data,
+        }
     }
 }
 
 #[cfg(feature = "utils")]
 impl<'a, 's, F> Reader<'a, 's, F>
-    where F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
+where
+    F: Clone + Fn(Buffer<'a>) -> Option<&'s [u8]>,
 {
     /// Visits the vertex positions of a primitive.
     pub fn read_positions(&self) -> Option<util::ReadPositions<'s>> {
         if let Some(accessor) = self.primitive.get(&Semantic::Positions) {
             if let Some(slice) = (self.get_buffer_data)(accessor.clone().view().buffer()) {
-                return Some(accessor::Iter::new(accessor, slice))
+                return Some(accessor::Iter::new(accessor, slice));
             }
         }
         None
@@ -289,7 +292,7 @@ impl<'a, 's, F> Reader<'a, 's, F>
     pub fn read_normals(&self) -> Option<util::ReadNormals<'s>> {
         if let Some(accessor) = self.primitive.get(&Semantic::Normals) {
             if let Some(slice) = (self.get_buffer_data)(accessor.clone().view().buffer()) {
-                return Some(accessor::Iter::new(accessor, slice))
+                return Some(accessor::Iter::new(accessor, slice));
             }
         }
         None
@@ -299,7 +302,7 @@ impl<'a, 's, F> Reader<'a, 's, F>
     pub fn read_tangents(&self) -> Option<util::ReadTangents<'s>> {
         if let Some(accessor) = self.primitive.get(&Semantic::Tangents) {
             if let Some(slice) = (self.get_buffer_data)(accessor.clone().view().buffer()) {
-                return Some(accessor::Iter::new(accessor, slice))
+                return Some(accessor::Iter::new(accessor, slice));
             }
         }
         None
@@ -307,23 +310,21 @@ impl<'a, 's, F> Reader<'a, 's, F>
 
     /// Visits the vertex colors of a primitive.
     pub fn read_colors(&self, set: u32) -> Option<util::ReadColors<'s>> {
-        use accessor::DataType::{U8, U16, F32};
-        use accessor::Dimensions::{Vec3, Vec4};
         use self::util::ReadColors;
+        use accessor::DataType::{F32, U16, U8};
+        use accessor::Dimensions::{Vec3, Vec4};
 
         if let Some(accessor) = self.primitive.get(&Semantic::Colors(set)) {
             if let Some(slice) = (self.get_buffer_data)(accessor.clone().view().buffer()) {
-                return Some(
-                    match (accessor.data_type(), accessor.dimensions()) {
-                        (U8, Vec3)  => ReadColors::RgbU8(accessor::Iter::new(accessor, slice)),
-                        (U16, Vec3) => ReadColors::RgbU16(accessor::Iter::new(accessor, slice)),
-                        (F32, Vec3) => ReadColors::RgbF32(accessor::Iter::new(accessor, slice)),
-                        (U8, Vec4)  => ReadColors::RgbaU8(accessor::Iter::new(accessor, slice)),
-                        (U16, Vec4) => ReadColors::RgbaU16(accessor::Iter::new(accessor, slice)),
-                        (F32, Vec4) => ReadColors::RgbaF32(accessor::Iter::new(accessor, slice)),
-                        _ => unreachable!(),
-                    }
-                )
+                return Some(match (accessor.data_type(), accessor.dimensions()) {
+                    (U8, Vec3) => ReadColors::RgbU8(accessor::Iter::new(accessor, slice)),
+                    (U16, Vec3) => ReadColors::RgbU16(accessor::Iter::new(accessor, slice)),
+                    (F32, Vec3) => ReadColors::RgbF32(accessor::Iter::new(accessor, slice)),
+                    (U8, Vec4) => ReadColors::RgbaU8(accessor::Iter::new(accessor, slice)),
+                    (U16, Vec4) => ReadColors::RgbaU16(accessor::Iter::new(accessor, slice)),
+                    (F32, Vec4) => ReadColors::RgbaF32(accessor::Iter::new(accessor, slice)),
+                    _ => unreachable!(),
+                });
             }
         }
 
@@ -332,19 +333,17 @@ impl<'a, 's, F> Reader<'a, 's, F>
 
     /// Visits the vertex draw sequence of a primitive.
     pub fn read_indices(&self) -> Option<util::ReadIndices<'s>> {
-        use accessor::DataType;
         use self::util::ReadIndices;
+        use accessor::DataType;
 
         if let Some(accessor) = self.primitive.indices() {
             if let Some(slice) = (self.get_buffer_data)(accessor.clone().view().buffer()) {
-                return Some(
-                    match accessor.data_type() {
-                        DataType::U8  => ReadIndices::U8(accessor::Iter::new(accessor, slice)),
-                        DataType::U16 => ReadIndices::U16(accessor::Iter::new(accessor, slice)),
-                        DataType::U32 => ReadIndices::U32(accessor::Iter::new(accessor, slice)),
-                        _ => unreachable!(),
-                    }
-                )
+                return Some(match accessor.data_type() {
+                    DataType::U8 => ReadIndices::U8(accessor::Iter::new(accessor, slice)),
+                    DataType::U16 => ReadIndices::U16(accessor::Iter::new(accessor, slice)),
+                    DataType::U32 => ReadIndices::U32(accessor::Iter::new(accessor, slice)),
+                    _ => unreachable!(),
+                });
             }
         }
 
@@ -353,18 +352,16 @@ impl<'a, 's, F> Reader<'a, 's, F>
 
     /// Visits the joint indices of the primitive.
     pub fn read_joints(&self, set: u32) -> Option<util::ReadJoints<'s>> {
-        use accessor::DataType;
         use self::util::ReadJoints;
+        use accessor::DataType;
 
         if let Some(accessor) = self.primitive.get(&Semantic::Joints(set)) {
             if let Some(slice) = (self.get_buffer_data)(accessor.view().buffer()) {
-                return Some(
-                    match accessor.data_type() {
-                        DataType::U8  => ReadJoints::U8(accessor::Iter::new(accessor, slice)),
-                        DataType::U16 => ReadJoints::U16(accessor::Iter::new(accessor, slice)),
-                        _ => unreachable!(),
-                    }
-                )
+                return Some(match accessor.data_type() {
+                    DataType::U8 => ReadJoints::U8(accessor::Iter::new(accessor, slice)),
+                    DataType::U16 => ReadJoints::U16(accessor::Iter::new(accessor, slice)),
+                    _ => unreachable!(),
+                });
             }
         }
 
@@ -373,19 +370,17 @@ impl<'a, 's, F> Reader<'a, 's, F>
 
     /// Visits the vertex texture co-ordinates of a primitive.
     pub fn read_tex_coords(&self, set: u32) -> Option<util::ReadTexCoords<'s>> {
-        use accessor::DataType;
         use self::util::ReadTexCoords;
+        use accessor::DataType;
 
         if let Some(accessor) = self.primitive.get(&Semantic::TexCoords(set)) {
             if let Some(slice) = (self.get_buffer_data)(accessor.view().buffer()) {
-                return Some(
-                    match accessor.data_type() {
-                        DataType::U8  => ReadTexCoords::U8(accessor::Iter::new(accessor, slice)),
-                        DataType::U16 => ReadTexCoords::U16(accessor::Iter::new(accessor, slice)),
-                        DataType::F32 => ReadTexCoords::F32(accessor::Iter::new(accessor, slice)),
-                        _ => unreachable!(),
-                    }
-                )
+                return Some(match accessor.data_type() {
+                    DataType::U8 => ReadTexCoords::U8(accessor::Iter::new(accessor, slice)),
+                    DataType::U16 => ReadTexCoords::U16(accessor::Iter::new(accessor, slice)),
+                    DataType::F32 => ReadTexCoords::F32(accessor::Iter::new(accessor, slice)),
+                    _ => unreachable!(),
+                });
             }
         }
 
@@ -393,20 +388,18 @@ impl<'a, 's, F> Reader<'a, 's, F>
     }
 
     /// Visits the joint weights of the primitive.
-    pub fn read_weights(&self, set: u32) -> Option<util::ReadWeights<'s>>  {
+    pub fn read_weights(&self, set: u32) -> Option<util::ReadWeights<'s>> {
         use self::accessor::DataType;
         use self::util::ReadWeights;
 
         if let Some(accessor) = self.primitive.get(&Semantic::Weights(set)) {
             if let Some(slice) = (self.get_buffer_data)(accessor.view().buffer()) {
-                return Some(
-                    match accessor.data_type() {
-                        DataType::U8  => ReadWeights::U8(accessor::Iter::new(accessor, slice)),
-                        DataType::U16 => ReadWeights::U16(accessor::Iter::new(accessor, slice)),
-                        DataType::F32 => ReadWeights::F32(accessor::Iter::new(accessor, slice)),
-                        _ => unreachable!(),
-                    }
-                )
+                return Some(match accessor.data_type() {
+                    DataType::U8 => ReadWeights::U8(accessor::Iter::new(accessor, slice)),
+                    DataType::U16 => ReadWeights::U16(accessor::Iter::new(accessor, slice)),
+                    DataType::F32 => ReadWeights::F32(accessor::Iter::new(accessor, slice)),
+                    _ => unreachable!(),
+                });
             }
         }
 

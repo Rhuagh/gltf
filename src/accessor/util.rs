@@ -1,6 +1,6 @@
-use std::mem;
-use byteorder::{LE, ByteOrder};
+use byteorder::{ByteOrder, LE};
 use std::marker::PhantomData;
+use std::mem;
 
 /// Represents items that can be read by an [`Accessor`].
 ///
@@ -59,36 +59,39 @@ impl Item for f32 {
 impl<T: Item> Item for [T; 2] {
     fn from_slice(slice: &[u8]) -> Self {
         assert!(slice.len() >= 2 * mem::size_of::<T>());
-        [T::from_slice(slice),
-         T::from_slice(&slice[mem::size_of::<T>() ..])]
+        [
+            T::from_slice(slice),
+            T::from_slice(&slice[mem::size_of::<T>()..]),
+        ]
     }
 }
 
 impl<T: Item> Item for [T; 3] {
     fn from_slice(slice: &[u8]) -> Self {
         assert!(slice.len() >= 3 * mem::size_of::<T>());
-        [T::from_slice(slice),
-         T::from_slice(&slice[1 * mem::size_of::<T>() ..]),
-         T::from_slice(&slice[2 * mem::size_of::<T>() ..])]
+        [
+            T::from_slice(slice),
+            T::from_slice(&slice[1 * mem::size_of::<T>()..]),
+            T::from_slice(&slice[2 * mem::size_of::<T>()..]),
+        ]
     }
 }
 
 impl<T: Item> Item for [T; 4] {
     fn from_slice(slice: &[u8]) -> Self {
         assert!(slice.len() >= 4 * mem::size_of::<T>());
-        [T::from_slice(slice),
-         T::from_slice(&slice[1 * mem::size_of::<T>() ..]),
-         T::from_slice(&slice[2 * mem::size_of::<T>() ..]),
-         T::from_slice(&slice[3 * mem::size_of::<T>() ..])]
+        [
+            T::from_slice(slice),
+            T::from_slice(&slice[1 * mem::size_of::<T>()..]),
+            T::from_slice(&slice[2 * mem::size_of::<T>()..]),
+            T::from_slice(&slice[3 * mem::size_of::<T>()..]),
+        ]
     }
 }
 
 impl<'a, T> Iter<'a, T> {
     /// Constructor.
-    pub fn new(
-        accessor: super::Accessor,
-        buffer_data: &'a [u8],
-    ) -> Iter<'a, T> {
+    pub fn new(accessor: super::Accessor, buffer_data: &'a [u8]) -> Iter<'a, T> {
         debug_assert_eq!(mem::size_of::<T>(), accessor.size());
         debug_assert!(mem::size_of::<T>() > 0);
         let view = accessor.view();
@@ -96,8 +99,12 @@ impl<'a, T> Iter<'a, T> {
         debug_assert!(stride >= mem::size_of::<T>());
         let start = view.offset() + accessor.offset();
         let end = start + stride * (accessor.count() - 1) + mem::size_of::<T>();
-        let data = &buffer_data[start .. end];
-        Iter { stride, data, _phantom: PhantomData }
+        let data = &buffer_data[start..end];
+        Iter {
+            stride,
+            data,
+            _phantom: PhantomData,
+        }
     }
 }
 
@@ -124,10 +131,10 @@ impl<'a, T: Item> Iterator for Iter<'a, T> {
     }
 
     fn nth(&mut self, nth: usize) -> Option<Self::Item> {
-        if let Some(val_data) = self.data.get(nth * self.stride ..) {
+        if let Some(val_data) = self.data.get(nth * self.stride..) {
             if val_data.len() >= mem::size_of::<T>() {
                 let val = T::from_slice(val_data);
-                self.data = &val_data[self.stride.min(val_data.len()) ..];
+                self.data = &val_data[self.stride.min(val_data.len())..];
                 Some(val)
             } else {
                 None
@@ -140,7 +147,7 @@ impl<'a, T: Item> Iterator for Iter<'a, T> {
     fn last(self) -> Option<Self::Item> {
         if self.data.len() >= mem::size_of::<T>() {
             self.data
-                .get((self.data.len() - 1) / self.stride * self.stride ..)
+                .get((self.data.len() - 1) / self.stride * self.stride..)
                 .map(T::from_slice)
         } else {
             None
